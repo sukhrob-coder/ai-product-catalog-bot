@@ -1,5 +1,5 @@
 """
-STAR_ELECT kanal boti — sozlamalar
+Telegram Shop Manager — sozlamalar
 
 Bu yerdagi qiymatlarni .env faylida yoki muhit o'zgaruvchilarida
 ko'rsatish tavsiya etiladi (parol/token kabi maxfiy narsalarni

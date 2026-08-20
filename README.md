@@ -1,156 +1,146 @@
-# STAR_ELECT kanal boti
+# Telegram Shop Manager
 
-PostgreSQL katalogi bilan ishlaydigan Telegram do'kon, kanal boti va FastAPI backend.
+Bu dastur Telegram orqali mahsulotlarni izlash va boshqarish uchun yaratilgan. Mijoz mahsulot nomi yoki rasmini yuboradi, bot bazadan mos ma’lumotni topib beradi. Admin yangi mahsulot qo‘shadi, Excel fayl yuklaydi va kerak bo‘lsa mahsulot postini kanalga chiqaradi. Barcha mahsulotlar PostgreSQL’da saqlanadi.
 
-Arxitektura tafsilotlari: `ARCHITECTURE.md`.
+## Asosiy imkoniyatlar
 
-## Qanday ishlaydi
+- Mahsulot nomi bo‘yicha PostgreSQL’dan qidirish.
+- `rezitka`, `naushnik`, `zaryadka` kabi yozilish variantlarini tushunish.
+- Mahsulot rasmini Gemini AI orqali tahlil qilish.
+- Gemini ishlamasa ham nom bo‘yicha lokal katalog qidiruvi davom etishi.
+- Katalogdagi bir xil yoki o‘xshash rasmni AI’siz image-hash orqali topish.
+- Mijozga mahsulot nomi, kategoriya va mavjud sonini ko‘rsatish.
+- Faqat topilgan mahsulotga o‘xshash mahsulotlarni chiqarish.
+- Admin uchun mahsulotni rasm + nom bilan qo‘shish.
+- Mahsulot bazada bo‘lsa, sonini oshirishdan oldin tasdiq tugmasini chiqarish.
+- Excel fayl orqali mahsulotlarni import qilish yoki yangilash.
+- Alohida `/post` rejimida rasmni kanalga joylash uchun preview tayyorlash (ixtiyoriy).
+- FastAPI orqali katalog va health-check API.
 
-1. PostgreSQL `products` va `categories` jadvallarini saqlaydi.
-2. Admin `/import` bilan EasyTrade Excel faylini DB'ga kiritadi yoki botga
-   `.xlsx` fayl yuboradi.
-3. Mijoz matn yoki rasm yuborsa, Gemini qidiruv mezonini ajratadi; bot mos
-   mahsulotlarni, shu kategoriyadagi o'xshash mahsulotlarni va qoldiqni ko'rsatadi.
+## Ishlash tartibi
 
-## 1-qadam: Botni Telegram'da yaratish
+Mijoz `/start` bosadi va mahsulot nomini yozadi yoki rasm yuboradi. Bot avval katalogdan qidiradi. Rasm bo‘yicha aniq aniqlash kerak bo‘lsa Gemini ishlaydi. Natijada mahsulot nomi, kategoriya va mavjud soni ko‘rsatiladi. Narx mijoz javoblarida ko‘rsatilmaydi.
 
-1. Telegram'da **@BotFather** ga yozing.
-2. `/newbot` buyrug'ini yuboring, botga nom va username bering.
-3. Sizga token beriladi (masalan `123456789:AAH...`) — uni saqlab qo'ying.
+Adminning rasm yuborishi o‘z-o‘zidan bazaga mahsulot qo‘shmaydi. Avval `/add`, `/post` yoki `/import` buyrug‘i tanlanadi.
 
-## 2-qadam: Botni kanalga admin qilib qo'shish
+## O‘rnatish va ishga tushirish
 
-1. STAR_ELECT kanalingizga o'ting -> **Administratorlar** -> **Admin qo'shish**.
-2. Yangi yaratgan botingizni toping va qo'shing.
-3. Botga kamida **"Xabar yuborish"** (Post messages) huquqini bering.
-
-## 3-qadam: Kompyuterda o'rnatish
+### 1. `.env` yaratish
 
 ```bash
-# 1) Loyihani ochib, papkaga kiring
-cd star_elect_bot
-
-# 2) Virtual muhit yaratish (tavsiya etiladi)
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-# 3) Kutubxonalarni o'rnatish
-pip install -r requirements.txt
-
-# 4) .env faylini sozlash
 cp .env.example .env
-# .env faylini oching va BOT_TOKEN, CHANNEL_ID, ADMIN_CHAT_IDS qiymatlarini kiriting
-
-# PostgreSQL va botni ishga tushirish
-docker compose up -d --build
-
-# API: http://localhost:8000/docs
 ```
 
-## 4-qadam: Mahsulotlar faylini tayyorlash
+`.env` ichida kamida quyidagilarni to‘ldiring:
 
-1. EasyTrade dasturida: **Hisobotlar -> Tovarlar qoldig'i** (yoki shunga
-   o'xshash) bo'limiga kiring.
-2. **Excel'ga eksport** qiling.
-3. Faylni loyihadagi `data/mahsulotlar.xlsx` manziliga saqlang
-   (yoki `.env` dagi `EXCEL_PATH` ni o'zingiz xohlagan joyga ko'rsating).
-4. Excel'dagi ustun nomlari `config.py` dagi `COLUMN_NAME`, `COLUMN_PRICE`
-   va h.k. bilan mos kelishi kerak. Agar EasyTrade'dagi ustun nomlari
-   boshqacha bo'lsa (masalan "Наименование" bo'lsa), `config.py` dagi
-   yoki `.env` dagi mos qiymatni o'zgartiring.
+```env
+BOT_TOKEN=Telegram_BotFather_token
+ADMIN_CHAT_IDS=Telegram_admin_chat_id
+GEMINI_API_KEY=Google_AI_Studio_key
+CHANNEL_ID=@kanal_username
+```
 
-**Rasm qo'shmoqchi bo'lsangiz:** `data/images/` papkasiga mahsulot
-rasmlarini joylang, Excel'da esa shu fayl nomini ko'rsatadigan ustun
-qo'shing (masalan "Rasm" ustuniga `stabilizator1.jpg` deb yozing).
+`GEMINI_API_KEY` rasm tahlili va AI post yaratish uchun kerak. Nom bo‘yicha PostgreSQL qidiruvi Gemini’siz ham ishlaydi.
 
-## 5-qadam: Botni ishga tushirish
+### 2. Docker bilan ishga tushirish
 
 ```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f bot
+```
+
+Servislar:
+
+- PostgreSQL — mahsulotlar bazasi.
+- Bot — Telegram polling va admin/mijoz oqimlari.
+- API — `http://localhost:8000`.
+- Swagger — `http://localhost:8000/docs`.
+
+To‘xtatish:
+
+```bash
+docker compose down
+```
+
+### 3. Docker’siz lokal ishga tushirish
+
+PostgreSQL ishlayotgan bo‘lishi va `DATABASE_URL` localhost bazasiga ko‘rsatilishi kerak.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 python main.py
 ```
 
-Bot doimiy ishlab turishi kerak bo'lsa (server yoki kompyuter doim yoniq
-bo'lishi kerak), quyidagilardan birini ishlating:
+FastAPI’ni alohida ishga tushirish:
 
-- **Linux server**: `systemd` service yoki `screen`/`tmux` orqali orqa fonda
-  ishga tushirish, yoki `pm2` / `supervisor`.
-- **Windows**: Task Scheduler orqali kompyuter yonganda avtomatik ishga
-  tushirish, yoki botni doim ochiq turadigan oyna sifatida qoldirish.
-
-Eng ishonchli yo'l — arzon VPS (masalan Ubuntu server)da doim ishlab
-turishi. Sizda Linux/Ubuntu server tajribangiz bor ekan, shu yerda
-`systemd` orqali servis qilib qo'yish eng qulay variant:
-
-```ini
-# /etc/systemd/system/star-elect-bot.service
-[Unit]
-Description=STAR_ELECT Telegram bot
-After=network.target
-
-[Service]
-WorkingDirectory=/home/USER/star_elect_bot
-ExecStart=/home/USER/star_elect_bot/venv/bin/python main.py
-Restart=always
-User=USER
-
-[Install]
-WantedBy=multi-user.target
-```
-
-So'ng:
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now star-elect-bot
-sudo systemctl status star-elect-bot
+uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
-## Buyruqlar
+## Telegram buyruqlari
 
-- `/start` — admin yoki mijoz rejimi
-- `/post` — kanalga bitta mahsulot postlash (faqat admin chatlar)
-- `/holat` — katalog holati (faqat admin chatlar)
-- `/import` — Excel'dan PostgreSQL'ga import
+### Mijoz
 
-`.env` dagi `ADMIN_CHAT_IDS` ga admin bilan yozishiladigan Telegram chat ID'sini
-kiriting. Bo'sh bo'lsa bot xavfsizlik sabab ishga tushmaydi.
+- `/start` — do‘kon bilan tanishish.
+- Oddiy matn — mahsulot nomi bo‘yicha qidirish.
+- Rasm — mahsulotni rasm orqali qidirish.
 
-## Sozlamalarni o'zgartirish
+### Admin
 
-Barcha asosiy sozlamalar `config.py` faylida:
+- `/start` — admin menyusi.
+- `/add` — rasm yuborish va caption’da mahsulot nomini ko‘rsatib bazaga qo‘shish.
+- `/import` — Excel faylni PostgreSQL’ga import qilish.
+- `/post` — rasm yuborib kanal posti preview’ini olish. Caption ixtiyoriy: bo‘sh bo‘lsa Gemini matn yaratadi, caption bo‘lsa Gemini chaqirilmaydi.
+- `/avtopost` — PostgreSQL’dan navbatdagi mahsulotni kanalga chiqarish.
+- `/holat` — jami va qoldiqdagi mahsulotlar sonini ko‘rish.
 
-| Sozlama | Vazifasi |
-|---|---|
-| `POST_TIMES` | Kuniga qaysi vaqtlarda post chiqarilishi |
-| `POSTS_PER_RUN` | Bir safarda nechta mahsulot joylanishi |
-| `ONLY_IN_STOCK` | Faqat omborda bor mahsulotlarni joylash |
-| `COLUMN_*` | Excel ustun nomlari |
+`ADMIN_CHAT_IDS` ichiga adminning Telegram chat ID’sini yozing. Admin rejimidan tashqarida yuborilgan rasm bazaga qo‘shilmaydi.
 
-## Gemini AI orqali Post Yaratish (Rasm yuborish)
+## Excel import
 
-1. `.env` fayliga `GEMINI_API_KEY` ni kiriting (API kalitni [Google AI Studio](https://aistudio.google.com/) orqali olasiz).
-2. Botga (shaxsiy chatda) mahsulot rasmini yuboring (rasm ostiga narxi yoki izohini ham yozishingiz mumkin).
-3. **Gemini AI** rasmni tahlil qilib, Telegram kanali uchun jozibali, professional reklama matnini yaratadi.
-4. Bot sizga postni ko'rsatadi:
-   - 🚀 **Kanalga joylash** — bitta bosishda kanalga chiqaradi.
-   - 🔄 **Qayta yozish** — matn yoqmasa, Gemini boshqa variant taklif qiladi.
-   - ❌ **Bekor qilish** — postni bekor qiladi.
+Excel faylni yuborishdan oldin `/import` buyrug‘ini bosing. Standart ustunlar:
 
-## Fayl tuzilishi
+- `Nomi`
+- `Narxi`
+- `Qoldiq`
+- `Guruh`
+- `Rasm`
+- `Shtrix-kod`
 
+Ustun nomlari boshqacha bo‘lsa `.env` ichidagi `COLUMN_NAME`, `COLUMN_QTY`, `COLUMN_CATEGORY` va boshqa `COLUMN_*` sozlamalarini o‘zgartiring.
+
+## API
+
+- `GET /health` — servis va baza holati.
+- `GET /api/v1/products` — mahsulotlar ro‘yxati.
+- `GET /api/v1/products/search?q=rezitka` — katalog qidiruvi.
+- `POST /api/v1/admin/import` — API kalit bilan Excel import.
+
+## Loyiha tuzilishi
+
+```text
+telegram_shop_bot/
+├── main.py             # Telegram bot, mijoz va admin oqimlari
+├── ai_helper.py        # Gemini rasm tahlili va post generatori
+├── retrieval.py        # lokal fuzzy/RAG qidiruv va image-hash
+├── database.py         # PostgreSQL modellar va CRUD
+├── catalog.py          # Excel import
+├── poster.py           # kanalga avtomatik postlash
+├── api.py              # FastAPI endpointlar
+├── config.py           # .env sozlamalari
+├── docker-compose.yml  # PostgreSQL, bot va API
+└── requirements.txt
 ```
-star_elect_bot/
-├── main.py           # ishga tushirish, rasm qabul qilish va callbacklar
-├── ai_helper.py      # Gemini AI integratsiyasi va promptlar
-├── config.py         # barcha sozlamalar
-├── database.py       # PostgreSQL model va qidiruv
-├── catalog.py        # Excel import
-├── data_source.py     # Excel'dan mahsulot o'qish
-├── poster.py          # DB mahsulotlarini kanalga yuborish
-├── state.py            # joylangan mahsulotlarni eslab qolish
-├── requirements.txt
-├── .env.example
-└── data/
-    ├── mahsulotlar.xlsx   # (siz qo'yasiz)
-    ├── images/            # (ixtiyoriy, rasm fayllar)
-    └── posted_state.json  # (avtomatik yaratiladi)
+
+## Tekshirish
+
+```bash
+python3 -m py_compile main.py ai_helper.py database.py retrieval.py api.py
+docker compose ps
+docker compose logs --tail=50 bot
 ```
+
+Bot tokeni, Gemini kaliti va PostgreSQL parolini git’ga qo‘shmang. `.env` fayli `.gitignore` orqali chiqarib tashlangan.

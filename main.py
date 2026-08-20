@@ -1,4 +1,4 @@
-"""STAR_ELECT Telegram bot: admin posting va PostgreSQL katalog qidiruvi."""
+"""Telegram Shop Manager: admin posting va PostgreSQL mahsulot qidiruvi."""
 import io
 import logging
 import os
@@ -20,7 +20,7 @@ from poster import run_posting_job
 from retrieval import match_image, retrieve
 
 logging.basicConfig(format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", level=logging.INFO)
-logger = logging.getLogger("star_elect_bot")
+logger = logging.getLogger("telegram_shop_bot")
 
 
 def _is_admin(update: Update) -> bool:

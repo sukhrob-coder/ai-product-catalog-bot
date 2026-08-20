@@ -12,7 +12,7 @@ from catalog import import_excel
 from database import init_db, list_products, search_products
 from retrieval import retrieve
 
-app = FastAPI(title="STAR_ELECT Catalog API", version="1.0.0")
+app = FastAPI(title="Telegram Shop Manager API", version="1.0.0")
 
 
 class ProductResponse(BaseModel):

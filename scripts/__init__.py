@@ -1,1 +1,1 @@
-"""Operational scripts for the STAR_ELECT catalog."""
+"""Operational scripts for Telegram Shop Manager."""
