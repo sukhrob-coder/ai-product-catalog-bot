@@ -95,7 +95,6 @@ uvicorn api:app --host 0.0.0.0 --port 8000
 - `/import` — Excel faylni PostgreSQL’ga import qilish.
 - `/post` — rasm yuborib kanal posti preview’ini olish. Caption ixtiyoriy: bo‘sh bo‘lsa Gemini matn yaratadi, caption bo‘lsa Gemini chaqirilmaydi.
 - `/avtopost` — PostgreSQL’dan navbatdagi mahsulotni kanalga chiqarish.
-- `/holat` — jami va qoldiqdagi mahsulotlar sonini ko‘rish.
 
 `ADMIN_CHAT_IDS` ichiga adminning Telegram chat ID’sini yozing. Admin rejimidan tashqarida yuborilgan rasm bazaga qo‘shilmaydi.
 

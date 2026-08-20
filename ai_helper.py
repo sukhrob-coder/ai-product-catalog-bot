@@ -34,7 +34,7 @@ def get_footer_text() -> str:
     return "\n".join(lines)
 
 
-async def generate_post_from_image(image_bytes: bytes, mime_type: str = "image/jpeg", user_note: str = "") -> str:
+async def generate_post_from_image(image_bytes: bytes | list[bytes], mime_type: str = "image/jpeg", user_note: str = "") -> str:
     """
     Mahsulot rasmini Gemini AI ga yuborib, Telegram kanal uchun chiroyli post yaratadi.
     user_note: Foydalanuvchi rasm bilan birga yuborgan qo'shimcha ma'lumot.
@@ -65,9 +65,10 @@ Qoidalar:
 """
 
     try:
-        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        images = image_bytes if isinstance(image_bytes, list) else [image_bytes]
+        image_parts = [types.Part.from_bytes(data=image, mime_type=mime_type) for image in images]
         response = await asyncio.wait_for(
-            asyncio.to_thread(client.models.generate_content, model=config.GEMINI_MODEL, contents=[image_part, prompt]),
+            asyncio.to_thread(client.models.generate_content, model=config.GEMINI_MODEL, contents=image_parts + [prompt]),
             timeout=config.GEMINI_TIMEOUT_SECONDS,
         )
         post_text = (response.text or "").strip()
